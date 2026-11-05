@@ -41,7 +41,7 @@ So try to imagine this journey like a PS2 adventure game (that's what I'm doing 
 
 ## `gpt2`
 
-This folder is dedicated to practicing implementing from scratch the GPT2 model, this is mainly considers the implementation side, less so on the theory, sometimes python/pytorch coding theory is dicussed to obtain more context on certain functions and what happens under the hood.
+This folder is dedicated to practicing implementing from scratch the GPT2 model, this mainly considers the implementation side, less so on the theory, sometimes python/pytorch coding theory is dicussed to obtain more context on certain functions and what happens under the hood.
 
 ## 2026-08-18 — `gpt2/01_token_embeddings.ipynb`
 Implemented token embeddings from scratch.
