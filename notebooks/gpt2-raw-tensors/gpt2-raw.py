@@ -60,16 +60,16 @@ class Attention(nn.Module):
         self.W_Q = nn.Parameter(t.empty(config.n_heads, config.d_model, config.d_head))
         self.W_K = nn.Parameter(t.empty(config.n_heads, config.d_model, config.d_head))
         self.W_V = nn.Parameter(t.empty(config.n_heads, config.d_model, config.d_head))
-        self.W_O = nn.Parameter(t.empty(config.n_heads, config.d_model, config.d_head))
-        self.b_Q = nn.Parameter(t.empty(config.n_heads, config.d_head))
-        self.b_K = nn.Parameter(t.empty(config.n_heads, config.d_head))
-        self.b_V = nn.Parameter(t.empty(config.n_heads, config.d_head))
-        self.b_O = nn.Parameter(t.empty(config.n_heads, config.d_head))
-        self.register_buffer("IGNORE", t.tensor(float("-inf"), dtype=t.float32, device=device))
+        self.W_O = nn.Parameter(t.empty(config.n_heads, config.d_head, config.d_model))
+        self.b_Q = nn.Parameter(t.zeros(config.n_heads, config.d_head))
+        self.b_K = nn.Parameter(t.zeros(config.n_heads, config.d_head))
+        self.b_V = nn.Parameter(t.zeros(config.n_heads, config.d_head))
+        self.b_O = nn.Parameter(t.zeros(config.d_model))
+        self.register_buffer("IGNORE", t.tensor(float("-inf"), dtype=t.float32))
         nn.init.normal_(self.W_Q, std=config.init_range)
         nn.init.normal_(self.W_K, std=config.init_range)
         nn.init.normal_(self.W_V, std=config.init_range)
-        nn.init.normal_(self.W_, std=config.init_range)
+        nn.init.normal_(self.W_O, std=config.init_range)
 
     def apply_causal_mask(self, attn_scores: Float[Tensor, "batch n_heads query_pos key_pos"],
                           )-> Float[Tensor, "batch n_heads query_pos key_pos"]:
@@ -82,15 +82,15 @@ class Attention(nn.Module):
         return masked
 
     def forward(self, normalised_resid_pre: Float[Tensor, "batch psn d_model"]) -> Float[Tensor, "batch psn d_model"]:
-        q = einops.einsum(normalised_resid_pre, self.W_Q, "batch psn d_model n_heads d_model d_head -> batch psn n_heads d_head") + self.b_Q
-        k = einops.einsum(normalised_resid_pre, self.W_K, "batch psn d_model n_heads d_model d_head -> batch psn n_heads d_head") + self.b_K
-        v = einops.einsum(normalised_resid_pre, self.W_V, "batch psn d_model n_heads d_model d_head -> batch psn n_heads d_head") + self.b_V
-        attn_scores = einops.einsum(q, k, "batch posQ n_heads d_head batch posK n_heads d_head -> batch n_heads posQ posK")
-        attn_scores_scaled = attn_scores / config.n_heads**0.5
+        q = einops.einsum(normalised_resid_pre, self.W_Q, "batch psn d_model, n_heads d_model d_head -> batch psn n_heads d_head") + self.b_Q
+        k = einops.einsum(normalised_resid_pre, self.W_K, "batch psn d_model, n_heads d_model d_head -> batch psn n_heads d_head") + self.b_K
+        v = einops.einsum(normalised_resid_pre, self.W_V, "batch psn d_model, n_heads d_model d_head -> batch psn n_heads d_head") + self.b_V
+        attn_scores = einops.einsum(q, k, "batch posQ n_heads d_head, batch posK n_heads d_head -> batch n_heads posQ posK")
+        attn_scores_scaled = attn_scores / config.d_head**0.5
         masked_scores = self.apply_causal_mask(attn_scores_scaled)
         probs = masked_scores.softmax(-1)
-        z = einops.einsum(probs, v, "batch n_heads posQ posK batch posK n_heads d_head -> batch posQ n_heads d_head")
-        atn_out = einops.einsum(z, self.W_O, "batch posQ n_heads d_head n_heads d_model d_head -> batch posQ d_model") + self.b_O
+        z = einops.einsum(probs, v, "batch n_heads posQ posK, batch posK n_heads d_head -> batch posQ n_heads d_head")
+        atn_out = einops.einsum(z, self.W_O, "batch posQ n_heads d_head, n_heads d_head d_model -> batch posQ d_model") + self.b_O
         return atn_out
 
     
@@ -109,7 +109,7 @@ def show(name, x, n=4):
 
 
 if __name__ == "__main__":
-    device = t.device("mps" if t.backends.mps.is_available() else "cuda" if t.cuda.is_available() else "cpu")
+    device = "mps" if t.backends.mps.is_available() else "cpu"
     config = Config()
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     text = ["In mathematics, the concept of a measure is a generalization and formalization of geometrical measures",
@@ -119,7 +119,7 @@ if __name__ == "__main__":
             "Far-reaching generalizations (such as spectral measures and positive operator-valued measures) of measure are widely used in quantum physics and physics in general."]
 
     tokenizer.pad_token = tokenizer.eos_token
-    tokens = tokenizer(text, return_tensors="pt", padding=True)["input_ids"]
+    tokens = (tokenizer(text, return_tensors="pt", padding=True)["input_ids"]).to(device)
     print("pieces:", tokenizer.convert_ids_to_tokens(tokens[0]))
     print("tokens:", tokens.shape)
 
@@ -130,13 +130,17 @@ if __name__ == "__main__":
     """
     Here you initialise the modules as you complete them
     """
-    embed = Embed(config)
-    pos_emb = PosEmbed(config)
+    embed = Embed(config).to(device)
+    pos_emb = PosEmbed(config).to(device)
+    ln1 = LayerNorm(config).to(device)
+    atn1 = Attention(config).to(device)
 
     with t.no_grad():
-        tok_out = embed(tokens);    show("Token Embed", tok_out)
+        tok_out = embed(tokens);     show("Token Embed", tok_out)
         pos_out = pos_emb(tokens);   show("Position Embed", pos_out)
-        resid = tok_out + pos_out;  show("residual", resid)
+        resid = tok_out + pos_out;   show("residual", resid)
+        norm_resid = ln1(resid);     show("normalised Residual", norm_resid)
+        attention = atn1(norm_resid);show("Attention", attention)
 
 
 
