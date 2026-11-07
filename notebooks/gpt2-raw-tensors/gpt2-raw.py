@@ -6,6 +6,7 @@ import torch.nn as nn
 from dataclasses import dataclass
 from transformers import GPT2Tokenizer
 import einops
+import torch.nn.functional as F
 
 cfg = Config()
 
@@ -93,8 +94,22 @@ class Attention(nn.Module):
         atn_out = einops.einsum(z, self.W_O, "batch posQ n_heads d_head, n_heads d_head d_model -> batch posQ d_model") + self.b_O
         return atn_out
 
-    
+class MLP(nn.Module):
+    def __init__(self, config: Config):
+        super().__init__()
+        self.config = config
+        self.W_in = nn.Parameter(t.empty(config.d_model, config.d_mlp))
+        self.W_out = nn.Parameter(t.empty(config.d_mlp, config.d_model))
+        self.b_in = nn.Parameter(t.zeros(config.d_mlp))
+        self.b_out = nn.Parameter(t.zeros(config.d_model))
+        nn.init.normal_(self.W_in, std=config.init_range)
+        nn.init.normal_(self.W_out, std=config.init_range)
 
+    def forward(self, normalised_resid_mid: Float[Tensor, "batch posn d_model"]) -> Float[Tensor, "batch posn d_model"]:
+        mlp_in = einops.einsum(normalised_resid_mid, self.W_in, "batch posn d_model, d_model d_mlp -> batch posn d_mlp") + self.b_in
+        activation = F.gelu(mlp_in, approximate="tanh")
+        mlp_out = einops.einsum(activation, self.W_out, "batch posn d_mlp, d_mlp d_model -> batch posn d_model") + self.b_out
+        return mlp_out
 # --------- As you complete more classes add them above this line ------ 
 
 """
@@ -134,6 +149,7 @@ if __name__ == "__main__":
     pos_emb = PosEmbed(config).to(device)
     ln1 = LayerNorm(config).to(device)
     atn1 = Attention(config).to(device)
+    mlp1 = MLP(config).to(device)
 
     with t.no_grad():
         tok_out = embed(tokens);     show("Token Embed", tok_out)
@@ -141,6 +157,7 @@ if __name__ == "__main__":
         resid = tok_out + pos_out;   show("residual", resid)
         norm_resid = ln1(resid);     show("normalised Residual", norm_resid)
         attention = atn1(norm_resid);show("Attention", attention)
+        mlp = mlp1(attention);       show("MLP", mlp)
 
 
 
