@@ -56,3 +56,9 @@ Implemented token embeddings from scratch.
 ### Review
 - [ ] Inspect LayerNorm in Hugging Face and why it differs from current Implementation
 - [ ] Integration of masking with attention mechanism
+
+## 2026-11-07 - `gpt2-raw-tensors/gpt2-raw.py`
+- Implemented the `MLP` function using `einops.einsum` for matrix multiplications, addressing challenges with traditional PyTorch operations.
+- Explored the benefits of `einops.einsum`, such as improved readability and easier debugging by defining dimensions explicitly.
+- Covered the necessity of initializing a new `nn.LayerNorm` instance every time layer normalization is applied to ensure unique learnable parameters for each section.
+- **Review:** Understood that GELU with the tanh approximation was chosen due to its compatibility with GPT-2 and its performance benefits in Transformers, but did not delve into specific comparative advantages over other activation functions.
