@@ -3,4 +3,11 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
-daily_updates.py
+tools/daily_updates.py
+
+# experiment results stay local
+experiments/*/outputs/*
+!experiments/*/outputs/.gitkeep
+
+# pip install -e .
+*.egg-info/

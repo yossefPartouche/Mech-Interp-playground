@@ -11,10 +11,30 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Install dependencies:
+Install dependencies and the project's own code (`src/mechinterp`):
 ```bash
 pip install -r requirements.txt
+pip install -e .
 ```
+
+## Project structure
+
+```
+src/mechinterp/      reusable, trusted code: models, config, helpers (import as `mechinterp`)
+notebooks/           learning: lessons, notes, trying out small functions
+  gpt2-pytorch-modules/   GPT-2 step by step with nn.Module
+  gpt2-raw-tensors/       GPT-2 step by step with raw tensors
+  transformer-lens/       exploring TransformerLens
+  scratch/                rough work
+experiments/         one folder per question (NNN_short-name/), see experiments/README.md
+scripts/             tools that use the model (sanity checks, training)
+tools/               workflow helpers (daily_updates.py, not tracked)
+DAILY_UPDATES.md     learning log
+```
+
+Rules: nothing imports from `notebooks/`; experiments import from `src/` and never from each other;
+code moves into `src/` the second time it's needed; modify models with subclasses or config
+options instead of copying `model.py`; experiment outputs stay out of git.
 
 ## Every time you sit down to work
 ```bash
