@@ -43,22 +43,20 @@ Implemented token embeddings from scratch.
 - Finally implemented the rest of the transformer including the residual aspect of the data using a visual diagram provided to complete the task, as most of the operations have already been covered. 
 - Realised that a new `nn.LayerNorm` should be initialised **EVERYTIME** we apply layer norm in another section of the model to enable more learning parameters. 
 
-## 2026-11-07
+## 2026-11-07 - `gpt2-raw-tensors/gpt2-raw.py`
 
-**Commits:** `909892f` implemented the masking and layer normalisation
-**Files:** `notebooks/gpt2-raw-tensors/gpt2-raw.py`
-
-### What I did
 - Implemented the LayerNorm class with forward method for normalizing tensor data.
 - Added the Attention class including the apply_causal_mask method which applies causal masking to attention scores.
 - Updated the main script to include PositionEmbed and Embed classes, and added a show helper function to display tensor shapes, means, standard deviations, and token values.
-
-### Review
-- [ ] Inspect LayerNorm in Hugging Face and why it differs from current Implementation
-- [ ] Integration of masking with attention mechanism
 
 ## 2026-11-07 - `gpt2-raw-tensors/gpt2-raw.py`
 - Implemented the `MLP` function using `einops.einsum` for matrix multiplications, addressing challenges with traditional PyTorch operations.
 - Explored the benefits of `einops.einsum`, such as improved readability and easier debugging by defining dimensions explicitly.
 - Covered the necessity of initializing a new `nn.LayerNorm` instance every time layer normalization is applied to ensure unique learnable parameters for each section.
 - **Review:** Understood that GELU with the tanh approximation was chosen due to its compatibility with GPT-2 and its performance benefits in Transformers, but did not delve into specific comparative advantages over other activation functions.
+
+## 2026-11-08 - `gpt2-raw-tensors/gpt2-raw.py`
+- Implemented a `TransformerBlock` class, which includes LayerNorm and Attention mechanisms.
+- Created a `DemoTransformer` model that stacks multiple TransformerBlocks to form a complete mini Transformer architecture.
+- Added utility functions (`check_components`, `check_block`, `check_model`) to verify the flow of data through each component.
+
