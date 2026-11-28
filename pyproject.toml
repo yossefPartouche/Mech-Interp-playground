@@ -1,12 +1,17 @@
-[build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "mechinterp"
 version = "0.1.0"
-description = "Reusable models and helpers for the Mech-Interp playground"
-requires-python = ">=3.10"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "torch>=2.13",
+  "transformer-lens>=3.7,<4",
+  "transformers>=5.15",
+  "einops", "jaxtyping", "numpy", "plotly", "circuitsvis",
+]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[dependency-groups]
+dev = ["ipykernel", "ipywidgets", "jupyter"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
