@@ -1,21 +1,14 @@
 ## Setup
 
-Clone and enter the project:
+Needs [uv](https://docs.astral.sh/uv/) installed once on the machine (`brew install uv`).
+
 ```bash
-cd ~/Projects/mech-interp-playground
+cd ~/Projects/Mech-Interp-playground
+uv sync
 ```
 
-Create and activate a virtual environment (only needed once):
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install dependencies and the project's own code (`src/mechinterp`):
-```bash
-pip install -r requirements.txt
-pip install -e .
-```
+This creates `.venv/`, installs the packages listed in `pyproject.toml` (exact versions pinned in
+`uv.lock`) and installs the project's own code (`src/mechinterp`). Run it again after pulling changes.
 
 ## Project structure
 
@@ -37,21 +30,33 @@ code moves into `src/` the second time it's needed; modify models with subclasse
 options instead of copying `model.py`; experiment outputs stay out of git.
 
 ## Every time you sit down to work
+
 ```bash
-cd ~/Projects/mech-interp-playground
-source venv/bin/activate
+cd ~/Projects/Mech-Interp-playground
 code .
 ```
 
-Check the bottom-right corner of VS Code to confirm the interpreter is `./venv/bin/python`.
+- Interpreter and notebook kernel: `.venv` (no need to activate anything).
+- Run a script: `uv run python scripts/playground.py`
+- Add a package: `uv add <package>` (updates `pyproject.toml` and `uv.lock`; commit both).
 
-## Updating requirements.txt
-After installing a new package:
-```bash
-pip freeze > requirements.txt
-```
+## Learning path
 
-### Advice from someone who knows nothing but is passionately curious 
+Lessons come from [ARENA](https://github.com/callummcdougall/ARENA_3.0) (kept as read-only reference in
+`~/Projects/ARENA_3.0`). Every lesson is implemented here: read it, rebuild it in
+`notebooks/arena-<section>-<name>/`, move reused code into `src/`, and turn own questions into experiments.
+
+| ARENA section | Read | Implemented in playground | Experiments |
+|---|---|---|---|
+| 1.1 Transformer from scratch | ✓ | `gpt2-pytorch-modules/`, `gpt2-raw-tensors/`, `src/mechinterp/models/` | — |
+| 1.2 Intro to mech interp | ✓ | `basic_MI_technique/`, `transformer-lens/` | [001](experiments/001_logit-lens-eiffel-tower/) |
+| 1.3.1 Linear probes | next | | |
+| 1.3.2 Function vectors & steering | | | |
+| 1.3.3 SAEs | | | |
+| 1.4.1 Indirect object identification | | | |
+| 1.5.x (pick one) | | | |
+
+### Advice from someone who knows nothing 
 
 I'm writing this in a period where all of this could be done in a single prompt flawlessly. 
 For anyone learning this, it's easy to fall prey to being over-assisted by LLMs and lose the essence of learning. 
